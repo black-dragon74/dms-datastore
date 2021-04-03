@@ -15,11 +15,24 @@ async function MessMenuHandler(req: express.Request, res: express.Response) {
     if (!browser)
         return
 
-    const page = await browser.newPage()
+    const page = await browser.newPage().catch(err => {
+        console.error(err)
+        res.status(500).send(errorToJSON(err))
+    })
+
+    if (!page)
+        return
 
     // Send the request to the new page
-    await page.goto(CONST.MESS_MENU_URL)
-    await page.waitForTimeout(1000)
+    await page.goto(CONST.MESS_MENU_URL).catch(err => {
+        console.error(err);
+        res.status(500).send(errorToJSON(err))
+    })
+
+    await page.waitForTimeout(1000).catch(err => {
+        console.error(err)
+        res.status(500).send(errorToJSON(err))
+    })
 
     // Now all that we have to do is wait eavluate the xPATHS
     const xPaths: string[] = [
@@ -29,36 +42,47 @@ async function MessMenuHandler(req: express.Request, res: express.Response) {
         '//*[@id="root"]/div/div[2]/div[2]/div[2]/div[4]/p'
     ]
 
-    let resp = new Map<string, string>()
+    let resp: { [k: string]: string | string[] } = {}
 
     // get the last updated date
     const lastUpdatedAt = await page.$x('//*[@id="root"]/div/div[2]/div[2]/div[2]/p').then(xPath => {
-        return page.evaluate(e => e.textContent, xPath[0])
+        return page.evaluate(e => e.textContent, xPath[0]).then(val => val as string)
     }).catch(err => {
         console.error(err)
         return ""
     })
 
-    resp.set("last_updated_at", lastUpdatedAt)
+    resp["last_updated_at"] = lastUpdatedAt.split('-')[1].trim()
 
     // Prepare the values
     for (let i = 0; i < meals.length; i++) {
         try {
-            let currHandler = await page.$x(xPaths[i])
-            const a = await page.evaluate(e => e.textContent, currHandler[0])
-            resp.set(meals[i], a == null ? ["Not updated yet"] : a.split(','))
+            const currMeal = await page.$x(xPaths[i]).then(xPath => {
+                return page.evaluate(e => e.textContent, xPath[0]).then(val => val as string).catch(() => {
+                    return "NA"
+                })
+            })
+
+            resp[meals[i]] = currMeal.split(',') as string[]
+
         } catch (e) {
             console.error(e)
+        }
+    }
+
+    // Find last updated meal
+    resp["last_updated_meal"] = "NA"
+    for (let meal of meals) {
+        if (resp[meal] != 'Not yet updated.') {
+            resp["last_updated_meal"] = meal
         }
     }
 
     // Close the browser
     await browser.close()
 
-    console.log(resp)
-
     // Send the repsonse
-    res.send([...resp])
+    res.send(resp)
 }
 
 export default MessMenuHandler
