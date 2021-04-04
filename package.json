@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node ./build/index.js",
     "build": "tsc --project ./",
-    "serve": "yarn run build && node ./build/index.js"
+    "serve": "nodemon index.ts"
   },
   "keywords": [],
   "author": "",
