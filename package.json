@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.ts",
+    "start": "yarn run build && node build/app.js",
     "build": "tsc --project ./",
-    "serve": "yarn run build && node build/app.js"
+    "serve": "nodemon index.ts"
   },
   "keywords": [],
   "author": "",
