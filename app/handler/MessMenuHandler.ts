@@ -7,7 +7,7 @@ async function MessMenuHandler(req: express.Request, res: express.Response) {
     const meals: string[] = ["breakfast", "lunch", "high_tea", "dinner"]
 
     // Load and render page
-    const browser = await puppeteer.launch().catch(e => {
+    const browser = await puppeteer.launch({args: ['--no-sandbox']}).catch(e => {
         console.error(e);
         res.status(500).send(errorToJSON(e))
     })
