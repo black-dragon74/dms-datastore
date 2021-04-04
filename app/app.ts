@@ -14,7 +14,7 @@ function startServer() {
 
     // Start listening
     try {
-        app.listen(CONST.PORT, () => {
+        app.listen(process.env.PORT || CONST.PORT, () => {
             console.log(`⚡️[server]: Server is running at http://localhost:${CONST.PORT}`);
         })
     } catch (e) {
