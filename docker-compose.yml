@@ -1,0 +1,11 @@
+version: '3.3'
+
+services:
+  muj-datastore:
+    environment:
+      - PORT=8003
+      - CHRPATH=/usr/bin/headless-chromium
+    ports:
+      - 8003:8003
+    restart: always
+    build: .

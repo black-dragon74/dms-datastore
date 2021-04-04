@@ -14,8 +14,12 @@ function startServer() {
 
     // Start listening
     try {
+        if (process.env.PORT) {
+            console.log("Using PORT set by env: " + process.env.PORT)
+        }
+
         app.listen(process.env.PORT || CONST.PORT, () => {
-            console.log(`⚡️[server]: Server is running at http://localhost:${CONST.PORT}`);
+            console.log(`⚡️[server]: Server is running at http://localhost:${process.env.PORT || CONST.PORT}`);
         })
     } catch (e) {
         console.error(`Unable to start the server ${e.toString()}`)

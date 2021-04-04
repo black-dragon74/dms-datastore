@@ -1,13 +1,21 @@
 import express from "express"
-import puppeteer from "puppeteer"
+import puppeteer from "puppeteer-core"
 import CONST from "../../utils/Const"
 import {errorToJSON} from "../../utils/Helpers";
 
 async function MessMenuHandler(req: express.Request, res: express.Response) {
     const meals: string[] = ["breakfast", "lunch", "high_tea", "dinner"]
 
+    // Check for browser env
+    const browserPath = process.env.CHRPATH
+    if (!browserPath) {
+        res.status(500).send(errorToJSON("No exported variable `CHRPATH` found in env."))
+        console.error("No exported variable `CHRPATH` found in env.")
+        return
+    }
+
     // Load and render page
-    const browser = await puppeteer.launch({args: ['--no-sandbox']}).catch(e => {
+    const browser = await puppeteer.launch({executablePath: browserPath, args: ['--no-sandbox']}).catch(e => {
         console.error(e);
         res.status(500).send(errorToJSON(e))
     })
