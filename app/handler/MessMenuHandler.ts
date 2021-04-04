@@ -46,7 +46,8 @@ async function MessMenuHandler(req: express.Request, res: express.Response) {
 
     // get the last updated date
     const lastUpdatedAt = await page.$x('//*[@id="root"]/div/div[2]/div[2]/div[2]/p').then(xPath => {
-        return page.evaluate(e => e.textContent, xPath[0]).then(val => val as string)
+        return page.evaluate(e => e.textContent, xPath[0])
+            .then(val => val as string)
     }).catch(err => {
         console.error(err)
         return ""
@@ -58,12 +59,14 @@ async function MessMenuHandler(req: express.Request, res: express.Response) {
     for (let i = 0; i < meals.length; i++) {
         try {
             const currMeal = await page.$x(xPaths[i]).then(xPath => {
-                return page.evaluate(e => e.textContent, xPath[0]).then(val => val as string).catch(() => {
-                    return "NA"
-                })
+                return page.evaluate(e => e.textContent, xPath[0])
+                    .then(val => val as string)
+                    .catch(() => {
+                        return "NA"
+                    })
             })
 
-            resp[meals[i]] = currMeal.split(',') as string[]
+            resp[meals[i]] = currMeal.split(',').map(m => m.trim())
 
         } catch (e) {
             console.error(e)
