@@ -37,11 +37,6 @@ async function MessMenuHandler(req: express.Request, res: express.Response) {
         res.status(500).send(errorToJSON(err))
     })
 
-    await page.waitForTimeout(1000).catch(err => {
-        console.error(err)
-        res.status(500).send(errorToJSON(err))
-    })
-
     // Now all that we have to do is wait eavluate the xPATHS
     const xPaths: string[] = [
         '//*[@id="root"]/div/div[2]/div[2]/div[2]/div[1]/p',
@@ -49,6 +44,12 @@ async function MessMenuHandler(req: express.Request, res: express.Response) {
         '//*[@id="root"]/div/div[2]/div[2]/div[2]/div[3]/p',
         '//*[@id="root"]/div/div[2]/div[2]/div[2]/div[4]/p'
     ]
+
+    // Wait for xPath, with a max timeout of 10 seconds
+    await page.waitForXPath(xPaths[0], {timeout: 10000}).catch(err => {
+        console.error(err)
+        res.status(500).send(errorToJSON(err))
+    })
 
     let resp: { [k: string]: string | string[] } = {}
 
