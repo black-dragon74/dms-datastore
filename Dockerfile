@@ -21,5 +21,8 @@ COPY . .
 # Run build
 RUN yarn run build
 
+# Strip dev deps
+RUN yarn install --production
+
 # Off we go
 CMD ["node", "build/index.js"]
