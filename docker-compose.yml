@@ -4,7 +4,7 @@ services:
   muj-datastore:
     environment:
       - PORT=8003
-      - CHRPATH=/usr/bin/headless-chromium
+      - CHRPATH=/usr/bin/chromium-browser
     ports:
       - 8003:8003
     restart: always
