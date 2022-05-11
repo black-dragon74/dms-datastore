@@ -4,7 +4,6 @@ import CONST from "../../utils/Const"
 import {errorToJSON} from "../../utils/Helpers";
 
 async function MessMenuHandler(req: express.Request, res: express.Response) {
-    const meals: string[] = ["breakfast", "lunch", "high_tea", "dinner"]
 
     // Check for browser env
     const browserPath = process.env.CHRPATH
@@ -32,65 +31,60 @@ async function MessMenuHandler(req: express.Request, res: express.Response) {
         return
 
     // Send the request to the new page
-    await page.goto(CONST.MESS_MENU_URL).catch(err => {
+    await page.goto(CONST.MESS_MENU_URL, {waitUntil: "networkidle2"}).catch(err => {
         console.error(err);
         res.status(500).send(errorToJSON(err))
     })
 
-    // Now all that we have to do is wait eavluate the xPATHS
-    const xPaths: string[] = [
-        '//*[@id="root"]/div/div[2]/div[2]/div[2]/div[1]/p',
-        '//*[@id="root"]/div/div[2]/div[2]/div[2]/div[2]/p',
-        '//*[@id="root"]/div/div[2]/div[2]/div[2]/div[3]/p',
-        '//*[@id="root"]/div/div[2]/div[2]/div[2]/div[4]/p'
-    ]
+    // Define the xPaths in a human-readable form
+    type MessFields = {
+        last_updated_at: string
+        breakfast: string
+        lunch: string
+        high_tea: string
+        dinner: string
+    }
 
-    // Wait for xPath, with a max timeout of 10 seconds
-    await page.waitForXPath(xPaths[0], {timeout: 10000}).catch(err => {
-        console.error(err)
-        res.status(500).send(errorToJSON(err))
-    })
+    const xPaths: MessFields = {
+        last_updated_at: '//*[@id="root"]/div/div[2]/div[2]/div/p',
+        breakfast: '//*[@id="root"]/div/div[2]/div[2]/div/div[1]/p',
+        lunch: '//*[@id="root"]/div/div[2]/div[2]/div/div[2]/p',
+        high_tea: '//*[@id="root"]/div/div[2]/div[2]/div/div[3]/p',
+        dinner: '//*[@id="root"]/div/div[2]/div[2]/div/div[4]/p'
+    }
 
     let resp: { [k: string]: string | string[] } = {}
 
-    // get the last updated date
-    const lastUpdatedAt = await page.$x('//*[@id="root"]/div/div[2]/div[2]/div[2]/p').then(xPath => {
-        return page.evaluate(e => e.textContent, xPath[0])
-            .then(val => val as string)
-    }).catch(err => {
-        console.error(err)
-        return ""
-    })
-
-    resp["last_updated_at"] = lastUpdatedAt.split('-')[1].trim()
-
     // Prepare the values
-    for (let i = 0; i < meals.length; i++) {
-        try {
-            const currMeal = await page.$x(xPaths[i]).then(xPath => {
-                return page.evaluate(e => e.textContent, xPath[0])
-                    .then(val => val as string)
-                    .catch(() => {
-                        return "NA"
-                    })
-            })
+    for (const key of Object.keys(xPaths)) {
+        const currPath = xPaths[key as keyof typeof xPaths]
+        const [element] = await page.$x(currPath)
+        let eleData: string = await page.evaluate(el => el.textContent, element).catch(() => "NA")
 
-            resp[meals[i]] = currMeal.split(',').map(m => m.trim())
+        if (key == "last_updated_at" && eleData != "NA")
+            eleData = eleData.split('-')[1].trim()
 
-        } catch (e) {
-            console.error(e)
-        }
+        resp[key] = eleData.split(',').map(v => {
+            if (v)
+                v.trim()
+
+            return v
+        })
     }
 
     // Find last updated meal
     resp["last_updated_meal"] = "NA"
-    for (let meal of meals) {
+    for (let meal of Object.keys(xPaths)) {
+        if (meal == "last_updated_at")
+            continue
+
         if (resp[meal] != 'Not yet updated.') {
             resp["last_updated_meal"] = meal
         }
     }
 
     // Close the browser
+    await page.close()
     await browser.close()
 
     // Send the repsonse
