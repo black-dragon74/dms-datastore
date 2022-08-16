@@ -16,7 +16,10 @@ async function MessMenuHandler(req: express.Request, res: express.Response) {
 
   // Load and render page
   const browser = await puppeteer
-    .launch({ executablePath: browserPath, args: ["--no-sandbox"] })
+    .launch({
+      executablePath: browserPath,
+      args: ["--single-process", "--no-zygote", "--no-sandbox"],
+    })
     .catch((e) => {
       console.error(e);
       res.status(500).send(errorToJSON(e));
